@@ -1,1 +1,49 @@
 
+
+name: Website Keep Alive
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping-websites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping all websites
+        shell: bash
+        run: |
+          set +e
+
+          urls=(
+            "https://codespace-1-6xev.onrender.com"
+          )
+
+          for url in "${urls[@]}"; do
+            echo "Checking: $url"
+
+            status=$(curl \
+              --location \
+              --silent \
+              --show-error \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              --connect-timeout 10 \
+              --max-time 30 \
+              "$url")
+            result=$?
+
+            if [ "$result" -eq 0 ] && [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
+              echo "SUCCESS: $url (HTTP $status)"
+            else
+              echo "FAILED: $url (HTTP ${status:-000}, curl exit $result)"
+            fi
+
+            echo "-----------------------------"
+          done
