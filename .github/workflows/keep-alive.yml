@@ -1,8 +1,7 @@
 
-
 name: Website Keep Alive
 
-on:
+"on":
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
@@ -19,8 +18,6 @@ jobs:
       - name: Ping all websites
         shell: bash
         run: |
-          set +e
-
           urls=(
             "https://codespace-1-6xev.onrender.com"
           )
@@ -28,22 +25,15 @@ jobs:
           for url in "${urls[@]}"; do
             echo "Checking: $url"
 
-            status=$(curl \
-              --location \
-              --silent \
-              --show-error \
-              --output /dev/null \
-              --write-out "%{http_code}" \
+            if curl -sS -L -o /dev/null \
               --connect-timeout 10 \
               --max-time 30 \
-              "$url")
-            result=$?
-
-            if [ "$result" -eq 0 ] && [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
-              echo "SUCCESS: $url (HTTP $status)"
+              -w "HTTP Status: %{http_code} | Response: %{time_total}s\n" \
+              "$url"; then
+              echo "Request completed"
             else
-              echo "FAILED: $url (HTTP ${status:-000}, curl exit $result)"
+              echo "FAILED: $url"
             fi
 
-            echo "-----------------------------"
+            echo "----------------------"
           done
